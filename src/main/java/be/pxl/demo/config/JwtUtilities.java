@@ -17,6 +17,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
@@ -79,7 +80,17 @@ public class JwtUtilities {
                 .signWith(getPrivateKey())
                 .compact();
     }
-    
+
+    public String generateRefreshToken(String email, String jti, Instant expirationDate) {
+        return Jwts.builder()
+                .subject(email)
+                .id(jti)
+                .issuedAt(new Date())
+                .expiration(Date.from(expirationDate)) // long-lived
+                .signWith(getPrivateKey())
+                .compact();
+    }
+
     public boolean validateToken(String token) {
         try {
             Jwts.parser().verifyWith(getPublicKey()).build().parseSignedClaims(token);
@@ -97,6 +108,10 @@ public class JwtUtilities {
             LOGGER.info("JWT token compact of handler are invalid.", e);
             throw e;
         }
+    }
+
+    public UUID extractTokenId(String token) {
+        return UUID.fromString(extractClaim(token, Claims::getId)); // ID == jti
     }
     
     public String getToken(HttpServletRequest httpServletRequest) {

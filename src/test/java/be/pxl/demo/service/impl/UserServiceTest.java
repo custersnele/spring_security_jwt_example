@@ -2,20 +2,22 @@ package be.pxl.demo.service.impl;
 
 import be.pxl.demo.api.dto.UserDto;
 import be.pxl.demo.builder.UserBuilder;
+import be.pxl.demo.config.SpringSecurityConfig;
 import be.pxl.demo.domain.User;
 import be.pxl.demo.repository.UserRepository;
+import be.pxl.demo.service.AuthenticationService;
 import be.pxl.demo.service.UserService;
+import be.pxl.demo.service.mapper.UserMapper;
+import be.pxl.demo.service.mapper.UserMapperImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
@@ -25,12 +27,15 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-@SpringBootTest
-@AutoConfigureMockMvc
+@SpringBootTest(classes = {UserService.class, DefaultUserService.class, UserMapperImpl.class})
+@EnableMethodSecurity
 class UserServiceTest {
 
     @MockitoBean
     private UserRepository userRepository;
+
+    @Autowired
+    private UserMapper userMapper;
 
     @Autowired
     private UserService userService;
