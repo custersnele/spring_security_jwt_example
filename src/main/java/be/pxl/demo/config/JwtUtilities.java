@@ -5,7 +5,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
@@ -27,7 +26,7 @@ public class JwtUtilities {
 
     @Value("${jwt.jwtExpirationTime}")
     private Long jwtExpirationTime;
-    
+
     private final KeyPair keyPair = Jwts.SIG.RS256.keyPair().build();
     private final Map<String, Claims> claimsCache = new ConcurrentHashMap<>();
 
@@ -42,35 +41,22 @@ public class JwtUtilities {
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
     }
-    
+
     public Claims extractAllClaims(String token) {
-        return claimsCache.computeIfAbsent(token, t -> 
-            Jwts.parser()
-                .verifyWith(getPublicKey())
-                .build()
-                .parseSignedClaims(t)
-                .getPayload()
+        return claimsCache.computeIfAbsent(token, t ->
+                Jwts.parser()
+                        .verifyWith(getPublicKey())
+                        .build()
+                        .parseSignedClaims(t)
+                        .getPayload()
         );
     }
-    
+
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
         final Claims claims = extractAllClaims(token);
         return claimsResolver.apply(claims);
     }
-    
-    public Date extractExpiration(String token) {
-        return extractClaim(token, Claims::getExpiration);
-    }
-    
-    public Boolean validateToken(String token, UserDetails userDetails) {
-        final String email = extractUsername(token);
-        return (email.equals(userDetails.getUsername()) && !isTokenExpired(token));
-    }
-    
-    public Boolean isTokenExpired(String token) {
-        return extractExpiration(token).before(new Date());
-    }
-    
+
     public String generateToken(String email, List<String> roles) {
         return Jwts.builder()
                 .subject(email)
@@ -91,10 +77,9 @@ public class JwtUtilities {
                 .compact();
     }
 
-    public boolean validateToken(String token) {
+    public void validateToken(String token) {
         try {
             Jwts.parser().verifyWith(getPublicKey()).build().parseSignedClaims(token);
-            return true;
         } catch (SecurityException | MalformedJwtException e) {
             LOGGER.info("Invalid JWT token.", e);
             throw e;
@@ -113,7 +98,7 @@ public class JwtUtilities {
     public UUID extractTokenId(String token) {
         return UUID.fromString(extractClaim(token, Claims::getId)); // ID == jti
     }
-    
+
     public String getToken(HttpServletRequest httpServletRequest) {
         final String bearerToken = httpServletRequest.getHeader("Authorization");
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {

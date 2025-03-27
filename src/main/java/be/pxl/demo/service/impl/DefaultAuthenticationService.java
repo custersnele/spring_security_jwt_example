@@ -5,10 +5,11 @@ import be.pxl.demo.api.dto.RegisterDto;
 import be.pxl.demo.api.dto.TokenDto;
 import be.pxl.demo.config.JwtUtilities;
 import be.pxl.demo.domain.RefreshToken;
+import be.pxl.demo.domain.Role;
 import be.pxl.demo.domain.User;
 import be.pxl.demo.exception.DuplicateEmailException;
 import be.pxl.demo.exception.RefreshTokenExpiredException;
-import be.pxl.demo.exception.RefreshTokenNotFoundException;
+import be.pxl.demo.exception.ResourceNotFoundException;
 import be.pxl.demo.repository.RefreshTokenRepository;
 import be.pxl.demo.repository.UserRepository;
 import be.pxl.demo.service.AuthenticationService;
@@ -66,7 +67,7 @@ public class DefaultAuthenticationService implements AuthenticationService {
             user.setFirstName(registerDto.firstName());
             user.setLastName(registerDto.lastName());
             user.setPassword(passwordEncoder.encode(registerDto.password()));
-            user.setRole(registerDto.userRole());
+            user.setRole(Role.USER);
             userRepository.save(user);
         }
     }
@@ -80,7 +81,7 @@ public class DefaultAuthenticationService implements AuthenticationService {
 
         User user = (User) userDetailsService.loadUserByUsername(email);
 
-        RefreshToken storedRefreshToken = refreshTokenRepository.findByUuidAndUser(jti, user).orElseThrow(RefreshTokenNotFoundException::new);
+        RefreshToken storedRefreshToken = refreshTokenRepository.findByUuidAndUser(jti, user).orElseThrow(ResourceNotFoundException::new);
         if (storedRefreshToken.getExpirationTime().isBefore(Instant.now())) {
             refreshTokenRepository.delete(storedRefreshToken);
             if (LOGGER.isInfoEnabled()) {

@@ -1,17 +1,16 @@
 package be.pxl.demo.config;
 
-import be.pxl.demo.api.AuthenticationController;
 import be.pxl.demo.api.dto.ApiError;
 import be.pxl.demo.exception.DuplicateEmailException;
 import be.pxl.demo.exception.RefreshTokenExpiredException;
 import be.pxl.demo.exception.RefreshTokenNotFoundException;
+import be.pxl.demo.exception.ResourceNotFoundException;
 import io.jsonwebtoken.ExpiredJwtException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authorization.AuthorizationDeniedException;
-import org.springframework.security.authorization.method.HandleAuthorizationDenied;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -34,9 +33,15 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(RefreshTokenNotFoundException.class)
-    public ResponseEntity<ApiError> handleTokenNotFound(RefreshTokenNotFoundException ex) {
+    public ResponseEntity<ApiError> handleRefreshTokenNotFound(RefreshTokenNotFoundException ex) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(new ApiError(ex.getMessage(), HttpStatus.FORBIDDEN));
+    }
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ApiError> handleResourceNotFound(ResourceNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ApiError(ex.getMessage(), HttpStatus.NOT_FOUND));
     }
 
     @ExceptionHandler(RefreshTokenExpiredException.class)

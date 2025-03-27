@@ -1,7 +1,12 @@
 package be.pxl.demo.config;
 
+import be.pxl.demo.domain.Role;
+import be.pxl.demo.domain.User;
+import be.pxl.demo.repository.UserRepository;
 import be.pxl.demo.security.CustomUserDetailsService;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -23,10 +28,10 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SpringSecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
-
-
     private final CustomUserDetailsService customerUserDetailsService;
 
+    @Value("${app.admin.password}")
+    private String adminPassword;
 
     public SpringSecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter, CustomUserDetailsService customerUserDetailsService) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
@@ -44,18 +49,14 @@ public class SpringSecurityConfig {
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         http
                 .exceptionHandling(customizer -> customizer
-                        .authenticationEntryPoint((request, response, authException) -> {
-                            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
-                        })
-                        .accessDeniedHandler((request, response, accessDeniedException) -> {
-                            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Access Denied");
-                        })
+                        .authenticationEntryPoint((request, response, authException) -> response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized"))
+                        .accessDeniedHandler((request, response, accessDeniedException) -> response.sendError(HttpServletResponse.SC_FORBIDDEN, "Access Denied"))
                 );
         return http.build();
     }
 
     @Bean
-    public AuthenticationManager authenticationManager() throws Exception {
+    public AuthenticationManager authenticationManager() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
         authProvider.setUserDetailsService(customerUserDetailsService);
         authProvider.setPasswordEncoder(passwordEncoder());
@@ -65,5 +66,20 @@ public class SpringSecurityConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public CommandLineRunner createDefaultAdmin(UserRepository userRepository, PasswordEncoder encoder) {
+        return args -> {
+            if (userRepository.findByEmail("elrond.doesnt.play@rivendell.biz").isEmpty()) {
+                User admin = new User();
+                admin.setEmail("elrond.doesnt.play@rivendell.biz");
+                admin.setPassword(encoder.encode(adminPassword));
+                admin.setFirstName("Legitimus");
+                admin.setLastName("Elrondson");
+                admin.setRole(Role.ADMIN);
+                userRepository.save(admin);
+            }
+        };
     }
 }

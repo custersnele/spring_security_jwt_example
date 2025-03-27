@@ -118,4 +118,8 @@ public class User implements Serializable, UserDetails {
     public int hashCode() {
         return Objects.hash(email);
     }
+
+    public void promoteToAdmin() {
+        role = Role.ADMIN;
+    }
 }

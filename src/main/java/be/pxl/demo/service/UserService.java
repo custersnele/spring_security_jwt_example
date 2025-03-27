@@ -8,4 +8,7 @@ import java.util.List;
 public interface UserService {
     @PreAuthorize("hasRole('ADMIN')")
     List<UserDto> findAllUsers();
+
+    @PreAuthorize("hasRole('ADMIN')")
+    void promoteToAdmin(Long id);
 }
